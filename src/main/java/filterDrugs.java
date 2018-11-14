@@ -192,7 +192,7 @@ public class filterDrugs {
 			//Initialization of treeMap with all years with value 0.
 			//It will give the right order to all amounts no matter if a drug doesn't appear in one year
 			//It will allow to simplify the code for the aggregation in case of targetType=state
-			for (int y = 1991; y < 2019; y++) 
+			for (int y = 2011; y < 2019; y++) 
 				timeSerieTree.put(y, 0.0);
 			
 			
