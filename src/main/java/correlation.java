@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -269,7 +270,7 @@ public class correlation extends Configured implements Tool {
 				outputKey = NDC_right +delim_CSV+ NDC_left;
 
 
-			output.collect(new Text(outputKey),new Text(corr+""));
+			output.collect(new Text(outputKey+delim_CSV+corr), new Text(""));
 		}
 	}
 
