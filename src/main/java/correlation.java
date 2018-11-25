@@ -195,7 +195,6 @@ public class correlation extends Configured implements Tool {
 	}
 
 	public static class CartesianMapper extends MapReduceBase implements Mapper<Text, Text, Text, Text> {
-		private Text outkey = new Text();
 
 		public void map(Text key, Text value, OutputCollector<Text, Text> output, Reporter reporter)
 				throws IOException {
@@ -275,12 +274,27 @@ public class correlation extends Configured implements Tool {
 	}
 
 	public int run(String[] args) throws Exception {
-//		if (args.length != 2) {
-//			System.err.println("Usage: CartesianCommentComparison <in> <out>");
-//			ToolRunner.printGenericCommandUsage(System.err);
-//			System.exit(2);
-//		}
-		FileUtils.deleteDirectory(new File(args[2]));
+		/*
+		 * args: <trend1_path> <trend1_path> <out_path>
+		 * 1º arg >
+		 * trend1_path: path for some drug trend
+		 * 2º arg > 
+		 * trend2_path: path for another drug trend
+		 * 3º arg > 
+		 * out_path: path for output file
+		 * e.g: "trend_opioid trend_nonopioid corr_op&non_op" will create a file with 
+		 * the correlation between drugs in "trend_opioid" and "trend_nonopioid"
+		 * and save it as "corr_op&non_op"
+		*/
+		
+		//folders to organize the directory
+		String resF = "res/";
+		String outF = resF + "output/";
+		String outPath = outF + args[2];
+		String inPath1 = outF + args[0];
+		String inPath2 = outF + args[1];
+		
+		FileUtils.deleteDirectory(new File(outPath));
 
 		// Configure the join type
 		JobConf conf = new JobConf("Cartesian Product");
@@ -289,9 +303,9 @@ public class correlation extends Configured implements Tool {
 		conf.setNumReduceTasks(0);
 		conf.setInputFormat(CartesianInputFormat.class);
 		// Configure the input format
-		CartesianInputFormat.setLeftInputInfo(conf, TextInputFormat.class, args[0]);
-		CartesianInputFormat.setRightInputInfo(conf, TextInputFormat.class, args[1]);
-		TextOutputFormat.setOutputPath(conf, new Path(args[2]));
+		CartesianInputFormat.setLeftInputInfo(conf, TextInputFormat.class, inPath1);
+		CartesianInputFormat.setRightInputInfo(conf, TextInputFormat.class, inPath2);
+		TextOutputFormat.setOutputPath(conf, new Path(outPath));
 		conf.setOutputKeyClass(Text.class);
 		conf.setOutputValueClass(Text.class);
 		RunningJob job = JobClient.runJob(conf);
