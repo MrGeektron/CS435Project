@@ -11,7 +11,10 @@ import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -43,6 +46,7 @@ public class filterDrugs {
 		// Create a lookup table with the cache file uploaded 
 		public void setup(Context context) throws IOException, InterruptedException {
 //			System.out.println("Running SETUP from Job1");
+			FileSystem fs = FileSystem.get(context.getConfiguration());  
 
 			String drugType = context.getConfiguration().get(DRUG_TYPE_ARG).toString();
 
@@ -51,8 +55,9 @@ public class filterDrugs {
 				// Read all files in the DistributedCache
 				for (URI u : files) {
 					BufferedReader rdr = new BufferedReader(
-							new InputStreamReader(new FileInputStream(new File(u.toString()))));
+							new InputStreamReader(fs.open(new Path(u.toString()))));
 					String line = null;
+
 					// For each record in the file
 					while ((line = rdr.readLine()) != null) {
 						// Get the user NDC and the rest for this entry
@@ -98,11 +103,25 @@ public class filterDrugs {
 			String[] entry = value.toString().split(delim_CSV);
 			String state = entry[1];
 			String supress = entry[8];
+			String amount = entry[9];
+			String year = entry[5];
 
-			//
+			//some years have swapped columns 8 and 9
+			if(year.matches(".*1995|1998|1999|2000|2002|2007|2008|2010.*")) {
+				supress = entry[9];
+				amount = entry[8];
+			}
+
 			if (supress.equals("true") || state.equals("XX"))
 				return;
 
+			try {
+				Double.parseDouble(amount);
+			} catch (Exception e) {
+				return;
+			}
+			//System.out.println("amount: "+amount+", supress: "+supress);
+			
 			// NDC can be retrieve from col 19 but the three parts are padded with zeros
 			// which make it impossible to look for.
 			// also, col 18 has a coordinate in the form "(y,x)", so we can use entry[20]
@@ -115,8 +134,8 @@ public class filterDrugs {
 			else
 				NDC = entry[2].replaceFirst(pad_zeros, "") + NDC_delim + entry[3].replaceFirst(pad_zeros, "")
 						+ NDC_delim + entry[4].replaceFirst(pad_zeros, "");
-			String year = entry[5];
-			String amount = entry[9];
+
+
 
 			// for each NDC there more than 1 entry, we these two fields changing. Thus, we
 			// need a reducer to sum up the 4 values
@@ -192,7 +211,7 @@ public class filterDrugs {
 			//Initialization of treeMap with all years with value 0.
 			//It will give the right order to all amounts no matter if a drug doesn't appear in one year
 			//It will allow to simplify the code for the aggregation in case of targetType=state
-			for (int y = 2011; y < 2019; y++) 
+			for (int y = 1992; y < 2019; y++) 
 				timeSerieTree.put(y, 0.0);
 			
 			
@@ -280,11 +299,20 @@ public class filterDrugs {
 		FileInputFormat.addInputPath(job1, new Path(inF+args[0]));
 		FileOutputFormat.setOutputPath(job1, new Path(pathJ1));
 
+		FileInputFormat.setInputDirRecursive(job1, true);
+		FileSystem fs = FileSystem.get(conf);  
+		RemoteIterator<LocatedFileStatus> fIterator = fs.listFiles(new Path(inF+args[1]), true);
+		 while(fIterator.hasNext()){
+		        LocatedFileStatus fileStatus = fIterator.next();
+		        //do stuff with the file like ...
+		        job1.addFileToClassPath(fileStatus.getPath());
+		    }
+		
 		//loading to cache all files with lists of the same drug type
-		for (final File fileEntry : new File(inF+args[1]).listFiles()) {
-			System.out.println("Loading to cache: " + fileEntry.getName());
-			job1.addCacheFile(new Path(fileEntry.getPath()).toUri());
-		}
+//		for (final File fileEntry : new File(inF+args[1]).listFiles()) {
+//			System.out.println("Loading to cache: " + fileEntry.getName());
+//			job1.addCacheFile(new Path(fileEntry.getPath()).toUri());
+//		}
 		// job1.addCacheFile(new URI("hdfs://server:port/FilePath/part-r-00000"));
 		job1.waitForCompletion(true);
 		System.out.print("Finish job1, ");

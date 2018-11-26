@@ -98,7 +98,7 @@ public class topK{
 		String outF = resF + "output/";
 		String inPath = outF + args[0];
 		String outPath = outF + "topK_" + args[0];
-
+System.out.println(outPath);
 		Configuration conf = new Configuration();
 
 		conf.set(TOP_K, args[1]);
