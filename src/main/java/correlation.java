@@ -208,10 +208,10 @@ public class correlation extends Configured implements Tool {
 			try {
 				Double.parseDouble(key.toString().split(delim_CSV, 3)[1]);
 				TargetTypeState = false;
-				System.out.println("TargetType: national");
+//				System.out.println("TargetType: national");
 			} catch (Exception e) {
 				TargetTypeState = true;
-				System.out.println("TargetType: state");
+//				System.out.println("TargetType: state");
 			}
 			
 //			System.out.println(key.toString() + " --- " + value.toString());
@@ -290,8 +290,8 @@ public class correlation extends Configured implements Tool {
 		
 		//folders to organize the directory
 		String resF = "res/";
-		String outF = resF + "output/";
-		String outPath = outF + args[2];
+		String outF = resF + "output/normalize/";
+		String outPath = outF + "correlations/" + args[2];
 		String inPath1 = outF + args[0];
 		String inPath2 = outF + args[1];
 		
